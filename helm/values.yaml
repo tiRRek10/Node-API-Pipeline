@@ -1,0 +1,90 @@
+# Default values for node-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  name: registry.gitlab.com/orhunozbal10/node-api/main:latest
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+
+deployment:
+  name: node-api-deployment
+  strategy:
+    rollingUpdate:
+      maxSurge: 2 
+      maxUnavailable: 0
+  probes:
+    liveness:
+      path: /food
+      initialDelay: 15
+      periodSeconds: 30
+    readiness:
+      path: /food
+      initialDelay: 15 
+      periodSeconds: 30  
+  port: 3000  
+  labels:
+    app: node-api
+  env: 
+  #Normally password should passed to deployment as references to secrets.
+    NODE_ENV: production 
+    DATABASE_URL: postgres://dbuser:secretpass@postgres:5432/foodie
+    DB_USER: postgres
+    DATABASE_PASSWORD: secretpass
+    DB_HOST: postgres
+    DB_PORT: "5432"
+    DB_DATABASE: foodie
+
+    
+
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: NodePort
+  name: node-api-service
+  port: 3000
+  targetPort: 3000
+
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
