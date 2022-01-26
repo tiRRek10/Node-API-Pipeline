@@ -1,6 +1,6 @@
 stages:
-#  - build
-#  - test
+  - build
+  - test
   - deploy-staging
   - deploy-production
 
@@ -21,50 +21,50 @@ variables:
   NODE_ENV: development
 
 
-# build-docker-image:
-#   image: docker:latest
-#   stage: build
-#   services:
-#     - docker:19.03.0-dind
-#   script:
-#     - echo $DOCKER_HOST
-#     - docker build -t $TAG_COMMIT -t $TAG_LATEST .
-#     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-#     - docker push $TAG_COMMIT
-#     - docker push $TAG_LATEST
+build-docker-image:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:19.03.0-dind
+  script:
+    - echo $DOCKER_HOST
+    - docker build -t $TAG_COMMIT -t $TAG_LATEST .
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker push $TAG_COMMIT
+    - docker push $TAG_LATEST
 
-# build-test-db-image:
-#   image: docker:latest
-#   stage: build
-#   services:
-#     - docker:19.03.0-dind
-#   script:
-#     - docker build -t $TAG_DB_COMMIT -t $TAG_DB_LATEST -f ./test-database/Dockerfile .
-#     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-#     - docker push $TAG_DB_COMMIT
-#     - docker push $TAG_DB_LATEST
+build-test-db-image:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:19.03.0-dind
+  script:
+    - docker build -t $TAG_DB_COMMIT -t $TAG_DB_LATEST -f ./test-database/Dockerfile .
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker push $TAG_DB_COMMIT
+    - docker push $TAG_DB_LATEST
 
 
 
-# connect:
-#   stage: test
-#   services:
-#     - name: $TAG_DB_LATEST
-#       alias: postgres  
-#   image: node:16-alpine3.13
-#   allow_failure: true
-#   script:
-#       - echo "API tests will be performed by curl."
-#       - echo $DOCKER_HOST
-#       - echo $DOCKER_DRIVER
-#       - echo $KUBECONFIG
-#       - pwd
-#       - ls -a
-#       - npm install
-#       - node server.js &
-#       - apk --no-cache add curl
-#       - echo  "Test sh script is running."
-#       - sh ./api-test.sh
+connect:
+  stage: test
+  services:
+    - name: $TAG_DB_LATEST
+      alias: postgres  
+  image: node:16-alpine3.13
+  allow_failure: true
+  script:
+      - echo "API tests will be performed by curl."
+      - echo $DOCKER_HOST
+      - echo $DOCKER_DRIVER
+      - echo $KUBECONFIG
+      - pwd
+      - ls -a
+      - npm install
+      - node server.js &
+      - apk --no-cache add curl
+      - echo  "Test sh script is running."
+      - sh ./api-test.sh
 
 
 deploy-staging:
@@ -74,7 +74,7 @@ deploy-staging:
   rules:
   - if: ($CI_COMMIT_BRANCH == "main")
   script:
-    - helm upgrade --install --set deployment.env.NODE_ENV=development -f ./helm/values.yaml node-api ./helm
+    - helm upgrade --install --set deployment.env.NODE_ENV=development --set image.name=$TAG_COMMIT -f ./helm/values.yaml node-api ./helm
 
 
 deploy-production:
@@ -84,7 +84,7 @@ deploy-production:
   rules:
     - if: ($CI_COMMIT_BRANCH == "main")
   script:
-    - helm upgrade --install --set deployment.env.NODE_ENV=production -f ./helm/values.yaml node-api ./helm
+    - helm upgrade --install --set deployment.env.NODE_ENV=production --set image.name=$TAG_COMMIT -f ./helm/values.yaml node-api ./helm
 
 
 
